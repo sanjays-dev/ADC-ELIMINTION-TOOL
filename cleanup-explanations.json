@@ -1,0 +1,14 @@
+{
+  "createdAt": "2026-04-24T18:54:21.622Z",
+  "projectPath": "D:\\Bit\\Task\\OWN PROJECT\\ADC Elimination tool\\demo-unused-python",
+  "items": [
+    {
+      "name": "unreachable:4",
+      "type": "variable",
+      "filePath": "D:/Bit/Task/OWN PROJECT/ADC Elimination tool/demo-unused-python/helpers.py",
+      "line": 4,
+      "confidenceScore": 85,
+      "explanation": "🟢 100% dead (safe to delete). Variable appears unreferenced in analyzed code paths (confidence 85%)."
+    }
+  ]
+}

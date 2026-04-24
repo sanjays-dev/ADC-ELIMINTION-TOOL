@@ -1,0 +1,53 @@
+{
+  "name": "adc-elimination-tool",
+  "version": "1.1.0",
+  "description": "Automated Dead Code Elimination Tool - Multi-language JavaScript version",
+  "main": "index.js",
+  "bin": {
+    "adc-scan": "cli.js"
+  },
+  "scripts": {
+    "start": "node cli.js",
+    "help": "node cli.js --help",
+    "scan": "node cli.js scan",
+    "scan:here": "node cli.js scan .",
+    "report": "node cli.js report",
+    "report:here": "node cli.js report . --output report.json --format json",
+    "clean": "node cli.js clean",
+    "fix": "node cli.js clean",
+    "clean:here": "node cli.js clean .",
+    "clean:all:here": "node cli.js clean . --confidence 0 --force",
+    "server": "node server.js",
+    "test": "echo \"Tests coming soon\"",
+    "lint": "echo \"Linting skipped for JS version\"",
+    "format": "echo \"Formatting skipped for JS version\""
+  },
+  "keywords": [
+    "dead-code",
+    "code-analysis",
+    "ast",
+    "refactoring",
+    "javascript",
+    "typescript",
+    "python",
+    "java"
+  ],
+  "author": "Developer",
+  "license": "MIT",
+  "dependencies": {
+    "@babel/parser": "^7.23.5",
+    "@babel/types": "^7.23.5",
+    "@lezer/java": "^1.0.0",
+    "@lezer/python": "^1.0.0",
+    "chalk": "^4.1.2",
+    "commander": "^11.0.0",
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "body-parser": "^1.20.2",
+    "glob": "^10.3.10",
+    "uuid": "^9.0.1"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

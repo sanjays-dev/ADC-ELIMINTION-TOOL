@@ -1,0 +1,14 @@
+{
+  "createdAt": "2026-04-24T19:18:53.483Z",
+  "projectPath": "D:\\Bit\\Task\\OWN PROJECT\\ADC Elimination tool\\demo-js",
+  "items": [
+    {
+      "name": "deadAgain",
+      "type": "function",
+      "filePath": "D:/Bit/Task/OWN PROJECT/ADC Elimination tool/demo-js/app.js",
+      "line": 5,
+      "confidenceScore": 90,
+      "explanation": "🟢 100% dead (safe to delete). Function appears unused from detected entry points (confidence 90%)."
+    }
+  ]
+}
