@@ -107,19 +107,20 @@ class AiExplainer {
 }
 
 function buildFallbackExplanation(item) {
-  if (item.type === 'function') {
-    return `Function "${item.name}" is not called from any reachable code path.`;
+  const type = String(item.type || '').toLowerCase();
+  if (type === 'function') {
+    return `Function "${item.name}" is never called from any reachable entry point, so its body (including returns) is unused.`;
   }
-  if (item.type === 'variable') {
-    return `Variable "${item.name}" is not referenced by reachable code paths.`;
+  if (type === 'variable') {
+    return `Variable "${item.name}" is assigned but never read by any reachable code path.`;
   }
-  if (item.type === 'import') {
-    return `Import "${item.name}" is not used by reachable code paths.`;
+  if (type === 'import') {
+    return `Import "${item.name}" is not referenced by any reachable code path.`;
   }
-  if (item.type === 'class') {
-    return `Class "${item.name}" is not referenced from reachable code paths.`;
+  if (type === 'class') {
+    return `Class "${item.name}" is never instantiated or referenced from reachable code paths.`;
   }
-  if (item.type === 'unreachable') {
+  if (type === 'unreachable') {
     return `This statement is unreachable and never executes.`;
   }
   return `This item is unreachable or unused from current entry points.`;
@@ -263,6 +264,9 @@ function normalizeAiExplanation(text, item) {
   if (compact.length < 12) return '';
 
   const firstSentence = compact.split(/(?<=[.!?])\s+/)[0] || compact;
+  if (/(?:\bFile:|\bDatei:|\bConfidence:|\bReason:)/i.test(firstSentence)) {
+    return buildFallbackExplanation(item);
+  }
   const concise = /not called|never called|unused|not used|unreachable|not referenced/i.test(firstSentence)
     ? firstSentence
     : buildFallbackExplanation(item);

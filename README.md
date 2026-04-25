@@ -3,10 +3,10 @@
 <div align="center">
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Built with TypeScript](https://img.shields.io/badge/Built%20with-TypeScript-blue.svg)](https://www.typescriptlang.org/)
+[![Built with JavaScript](https://img.shields.io/badge/Built%20with-JavaScript-yellow.svg)](https://developer.mozilla.org/docs/Web/JavaScript)
 [![Node.js Version](https://img.shields.io/badge/Node.js-16%2B-brightgreen.svg)](https://nodejs.org/)
 
-**A production-ready tool to detect, analyze, and safely remove dead code from your JavaScript/TypeScript projects**
+**A production-ready tool to detect, analyze, and safely remove dead code from JavaScript/TypeScript projects, with multi-language demos (Python, Java, C/C++)**
 
 [Features](#features) • [Installation](#installation) • [Quick Start](#quick-start) • [Documentation](#documentation) • [API Reference](#api-reference)
 
@@ -20,16 +20,17 @@ The **Automated Dead Code Elimination Tool (ADC)** is a comprehensive system tha
 
 ### Key Capabilities
 
-- ✅ **Complete Project Scanning** - Analyzes all JS/TS files in your project
+- ✅ **Multi-language Scanning** - JavaScript/TypeScript plus demos for Python, Java, C/C++
 - ✅ **AST-Based Analysis** - Uses Babel parser for accurate code understanding
 - ✅ **Dependency Graphing** - Builds cross-file function/variable relationships
 - ✅ **Reachability Analysis** - DFS traversal to identify unreachable code
 - ✅ **Classification** - Categorizes dead code (unused functions, variables, imports)
 - ✅ **Confidence Scoring** - 0-100% confidence rating for each finding
 - ✅ **Safe Removal** - Proposes changes with preview before deletion
-- ✅ **Web UI** - Interactive dashboard for visualization
 - ✅ **CLI Tool** - Command-line interface for automation
 - ✅ **JSON Reports** - Machine-readable analysis reports
+- ✅ **Optional AI Explanations** - Short reasons for each removal (with fallback)
+- ✅ **API Server** - REST endpoint for automation
 
 ---
 
@@ -44,64 +45,57 @@ cd adc-tool
 
 # Install dependencies
 npm install
-
-# Build the project
-npm run build
 ```
 
 ### Basic Usage
+
+> **Note:** When using `npm run`, pass extra CLI args after `--` (example: `npm run clean:here -- --confidence 0 --force`).
 
 #### CLI - Scan for Dead Code
 
 ```bash
 # Simple scan with console output
-adc-scan scan ./src
+npm run scan -- ./your-project
 
 # Save detailed JSON report
-adc-scan scan ./src --output ./report.json --format json
+npm run scan -- ./your-project --output ./report.json --format json
 
-# Specify entry points
-adc-scan scan ./src --entryPoints ./src/index.ts ./src/main.ts
+# Specify entry points (direct CLI)
+node cli.js scan ./your-project --entryPoints ./src/index.js ./src/main.js
 
 # With verbose output
-adc-scan scan ./src --verbose
+npm run scan -- ./your-project --verbose
 ```
 
 #### CLI - Generate Reports
 
 ```bash
 # Generate detailed analysis report
-adc-scan report ./src --output ./analysis-report.json
+npm run report -- ./your-project --output ./analysis-report.json --format json
 
 # Save console-formatted report
-adc-scan report ./src --output ./report.txt --format console
+node cli.js report ./your-project --output ./report.txt --format console
 ```
 
 #### CLI - Safe Code Removal
 
 ```bash
 # Preview changes before removal (requires confirmation)
-adc-scan clean ./src
+npm run clean -- ./your-project
 
 # Automatic removal with 90%+ confidence
-adc-scan clean ./src --confidence 90
+npm run clean -- ./your-project --confidence 90
 
 # Force removal without prompts
-adc-scan clean ./src --force
+npm run clean -- ./your-project --confidence 0 --force
 ```
 
-#### Web UI
+#### API Server
 
 ```bash
-# Start both API server and web frontend
-npm run web:all
-
-# Or start separately
-npm run web              # Backend API on http://localhost:3000
-npm run web:frontend     # Frontend on http://localhost:3001
+# Start REST API server
+npm run server
 ```
-
-Then navigate to `http://localhost:3001` to access the web dashboard.
 
 ---
 
@@ -144,9 +138,7 @@ Scores adjust based on:
 
 - **Preview Before Delete** - Shows exact lines to be removed
 - **Confidence Filtering** - Only remove code above confidence threshold
-- **User Confirmation** - Requires explicit approval before making changes
-- **Git Integration** - Generates git diffs for changes
-- **Rollback Support** - Changes saved for undo if needed
+- **User Confirmation** - Requires explicit approval before making changes (skip with `--force`)
 
 ### 5. Comprehensive Reporting
 
@@ -203,37 +195,37 @@ Generate analysis reports with:
 
 ### Core Components
 
-#### 1. Parser Module (`parser.ts`)
+#### 1. Parser Module (`parser.js`)
 Converts source files to Abstract Syntax Trees (AST) using Babel parser.
 - Handles TypeScript, JSX, modern JavaScript syntax
 - Extracts function/class/variable declarations
 - Handles syntax errors gracefully
 
-#### 2. Graph Builder (`graphBuilder.ts`)
+#### 2. Graph Builder (`graphBuilder.js`)
 Creates a dependency graph from AST nodes.
 - **Nodes**: Functions, variables, classes, imports, exports
 - **Edges**: Function calls, imports, references, dependencies
 - Cross-file relationship tracking
 
-#### 3. Analyzer (`analyzer.ts`)
+#### 3. Analyzer (`analyzer.js`)
 Performs reachability analysis using Depth-First Search (DFS).
 - Identifies entry points
 - Traverses reachable code paths
 - Marks unreachable nodes as dead code
 
-#### 4. Detector (`detector.ts`)
+#### 4. Detector (`detector.js`)
 Classifies dead code and assigns confidence scores.
 - Type classification (function, variable, import, etc.)
 - Confidence scoring based on detection certainty
 - Dynamic code flagging
 
-#### 5. Reporter (`reporter.ts`)
+#### 5. Reporter (`reporter.js`)
 Generates human-readable and machine-readable reports.
 - Console output with color formatting
 - JSON export for integration
 - Summary statistics and metrics
 
-#### 6. Cleaner (`cleaner.ts`)
+#### 6. Cleaner (`cleaner.js`)
 Safely removes detected dead code.
 - Generates deletion proposals
 - Creates git diffs for review
@@ -410,16 +402,17 @@ npm test -- parser
 npm test -- --watch
 ```
 
-### Example Project
+### Demo Projects
 
-The repository includes a sample project for testing:
+Use the included demo generators to create unused-code samples:
 
 ```bash
-cd example/sample-project
-adc-scan scan .
-```
+# Windows (creates demo-unused-java / demo-unused-python / demo-unused-c / demo-unused-js)
+create-demos.bat
 
-This demonstrates the tool on real code with intentional dead code.
+# Scan any demo
+node cli.js scan ./demo-unused-js --verbose
+```
 
 ---
 
@@ -534,13 +527,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🗺️ Roadmap
 
-- [ ] Python/Java support
-- [ ] Real-time file watching
-- [ ] VS Code extension
-- [ ] Integration with CI/CD pipelines
-- [ ] Machine learning for confidence scoring
-- [ ] Cloud-based analysis dashboard
-- [ ] IDE plugins (IntelliJ, VS Code)
+ - [ ] Improve multi-language precision (Python/Java/C/C++)
+ - [ ] Real-time file watching
+ - [ ] VS Code extension
+ - [ ] Integration with CI/CD pipelines
+ - [ ] Improved confidence heuristics
+ - [ ] IDE plugins (IntelliJ, VS Code)
 
 ---
 

@@ -5,6 +5,7 @@ echo Creating directories...
 mkdir demo-unused-java 2>nul
 mkdir demo-unused-python 2>nul
 mkdir demo-unused-c 2>nul
+mkdir demo-unused-js 2>nul
 
 echo.
 echo ========================================
@@ -386,6 +387,56 @@ echo Created: legacy.c
 
 echo.
 echo ========================================
+echo Creating JavaScript files...
+echo ========================================
+
+(
+echo const { addNumbers, greetUser } = require('./helpers');
+echo.
+echo function main() {
+echo     const result = addNumbers(5, 3);
+echo     console.log("Result: " + result);
+echo     console.log(greetUser("JavaScript"));
+echo }
+echo.
+echo main();
+) > demo-unused-js\app.js
+echo Created: app.js
+
+(
+echo function addNumbers(a, b) {
+echo     return a + b;
+echo }
+echo.
+echo function greetUser(name) {
+echo     return "Hello, " + name + "!";
+echo }
+echo.
+echo // Unused functions
+echo function subtractNumbers(a, b) {
+echo     return a - b;
+echo }
+echo.
+echo function legacyHelper() {
+echo     return "legacy";
+echo }
+echo.
+echo const UNUSED_CONSTANT = 999;
+echo.
+echo module.exports = { addNumbers, greetUser };
+) > demo-unused-js\helpers.js
+echo Created: helpers.js
+
+(
+echo // Entire file unused
+echo function oldFunction() {
+echo     console.log("old");
+echo }
+) > demo-unused-js\legacy.js
+echo Created: legacy.js
+
+echo.
+echo ========================================
 echo ✅ All demo projects created!
 echo ========================================
 echo.
@@ -393,4 +444,5 @@ echo Test them:
 echo   node cli.js scan ./demo-unused-java --verbose
 echo   node cli.js scan ./demo-unused-python --verbose
 echo   node cli.js scan ./demo-unused-c --verbose
+echo   node cli.js scan ./demo-unused-js --verbose
 echo.
