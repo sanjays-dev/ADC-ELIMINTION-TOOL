@@ -59,6 +59,10 @@ npm run clean -- ./your-project --confidence 85
 # Same as clean, but easier name
 npm run fix -- ./your-project --confidence 85
 
+# Confidence is a minimum threshold:
+# - Higher (e.g., 80) = fewer deletions, only items scored >= 80
+# - 0 = delete all detected unused items
+
 # Remove all detected items in one command (single run)
 npm run clean -- ./your-project --confidence 0 --force
 npm run fix -- ./your-project --confidence 0 --force
@@ -79,8 +83,15 @@ node cli.js clean ./your-project --confidence 85 --force --ai-explain --ai-api-k
 # Save explanations to custom file
 node cli.js clean ./your-project --confidence 85 --force --ai-explain --explain-output cleanup-explanations.json
 
-# Use Hugging Face provider (CodeLlama)
-node cli.js clean ./your-project --confidence 85 --force --ai-explain --ai-provider hf --ai-model codellama/CodeLlama-7b-Instruct-hf
+# Use Hugging Face provider (working hf-inference model)
+node cli.js clean ./your-project --confidence 85 --force --ai-explain --ai-provider hf --ai-model google-t5/t5-small
+```
+
+Important:
+```bash
+# Explanations are automatic by default now.
+# Disable with: --no-ai-explain
+# Require strict real-AI output with: --ai-explain-strict
 ```
 
 AI setup (optional):
@@ -89,7 +100,7 @@ AI setup (optional):
 OPENAI_API_KEY=your_key_here
 OPENAI_MODEL=gpt-4o-mini
 HF_API_KEY=your_hf_token_here
-HF_MODEL=codellama/CodeLlama-7b-Instruct-hf
+HF_MODEL=google-t5/t5-small
 
 # Windows PowerShell
 $env:OPENAI_API_KEY="your_key_here"
@@ -97,7 +108,7 @@ $env:OPENAI_MODEL="gpt-4o-mini"
 
 # Hugging Face (PowerShell)
 $env:HF_API_KEY="your_hf_token_here"
-$env:HF_MODEL="codellama/CodeLlama-7b-Instruct-hf"
+$env:HF_MODEL="google-t5/t5-small"
 ```
 
 ## 6) API Server

@@ -3,7 +3,6 @@
  */
 
 const https = require('https');
-const { getDeadCodeStatus } = require('./confidenceStatus');
 
 class AiExplainer {
   constructor(options = {}) {
@@ -14,6 +13,8 @@ class AiExplainer {
     this.timeoutMs = Number.isFinite(options.timeoutMs) ? options.timeoutMs : 15000;
     this.aiFailureCount = 0;
     this.lastAiError = '';
+    this.fallbackCount = 0;
+    this.aiSuccessCount = 0;
   }
 
   isEnabled() {
@@ -22,21 +23,27 @@ class AiExplainer {
 
   async explainItems(items) {
     const explained = [];
+    this.fallbackCount = 0;
+    this.aiSuccessCount = 0;
     for (const item of items) {
       let explanation = '';
       if (this.isEnabled()) {
         try {
           explanation = await this.explainWithAi(item);
-          explanation = normalizeAiExplanation(explanation);
+          explanation = normalizeAiExplanation(explanation, item);
         } catch (error) {
           this.aiFailureCount += 1;
           this.lastAiError = normalizeErrorMessage(error);
           explanation = '';
         }
       }
+      const usedFallback = !explanation;
+      if (usedFallback) this.fallbackCount += 1;
+      else this.aiSuccessCount += 1;
       explained.push({
         ...item,
         explanation: explanation || buildFallbackExplanation(item),
+        explanationSource: usedFallback ? 'fallback' : 'ai',
       });
     }
     return explained;
@@ -61,7 +68,6 @@ class AiExplainer {
         parameters: {
           max_new_tokens: 60,
           temperature: 0.2,
-          return_full_text: false,
         },
         options: {
           wait_for_model: true,
@@ -90,24 +96,33 @@ class AiExplainer {
   getLastAiError() {
     return this.lastAiError || '';
   }
+
+  getFallbackCount() {
+    return this.fallbackCount || 0;
+  }
+
+  getAiSuccessCount() {
+    return this.aiSuccessCount || 0;
+  }
 }
 
 function buildFallbackExplanation(item) {
-  const status = getDeadCodeStatus(item.confidenceScore).text;
-  const confidence = typeof item.confidenceScore === 'number' ? `${item.confidenceScore}%` : 'high';
   if (item.type === 'function') {
-    return `${status}. Function appears unused from detected entry points (confidence ${confidence}).`;
+    return `Function "${item.name}" is not called from any reachable code path.`;
   }
   if (item.type === 'variable') {
-    return `${status}. Variable appears unreferenced in analyzed code paths (confidence ${confidence}).`;
+    return `Variable "${item.name}" is not referenced by reachable code paths.`;
   }
   if (item.type === 'import') {
-    return `${status}. Import appears unused in this project scan (confidence ${confidence}).`;
+    return `Import "${item.name}" is not used by reachable code paths.`;
   }
   if (item.type === 'class') {
-    return `${status}. Class appears unreachable from analyzed entry points (confidence ${confidence}).`;
+    return `Class "${item.name}" is not referenced from reachable code paths.`;
   }
-  return `${status}. Item appears unreachable or unused in analysis (confidence ${confidence}).`;
+  if (item.type === 'unreachable') {
+    return `This statement is unreachable and never executes.`;
+  }
+  return `This item is unreachable or unused from current entry points.`;
 }
 
 function extractTextFromOpenAi(responseBody) {
@@ -138,12 +153,14 @@ function extractTextFromHf(responseBody) {
   if (Array.isArray(responseBody) && responseBody.length > 0) {
     const first = responseBody[0];
     if (first && typeof first.generated_text === 'string') return first.generated_text;
+    if (first && typeof first.translation_text === 'string') return first.translation_text;
     if (first && typeof first.summary_text === 'string') return first.summary_text;
     return JSON.stringify(first);
   }
 
   if (typeof responseBody === 'object') {
     if (typeof responseBody.generated_text === 'string') return responseBody.generated_text;
+    if (typeof responseBody.translation_text === 'string') return responseBody.translation_text;
     if (typeof responseBody.summary_text === 'string') return responseBody.summary_text;
     if (responseBody.error) return '';
   }
@@ -214,7 +231,7 @@ function resolveApiKey(provider, explicitApiKey) {
 function resolveModel(provider, explicitModel) {
   if (explicitModel) return explicitModel;
   if (provider === 'hf' || provider === 'huggingface') {
-    return process.env.HF_MODEL || 'codellama/CodeLlama-7b-Instruct-hf';
+    return process.env.HF_MODEL || 'google-t5/t5-small';
   }
   return process.env.OPENAI_MODEL || 'gpt-4o-mini';
 }
@@ -238,15 +255,19 @@ function normalizeErrorMessage(error) {
   }
 }
 
-function normalizeAiExplanation(text) {
+function normalizeAiExplanation(text, item) {
   if (typeof text !== 'string') return '';
   const compact = text.replace(/\s+/g, ' ').trim();
   if (!compact) return '';
   if (!/[A-Za-z]/.test(compact)) return '';
   if (compact.length < 12) return '';
+
   const firstSentence = compact.split(/(?<=[.!?])\s+/)[0] || compact;
-  if (!/[.!?]$/.test(firstSentence)) return `${firstSentence}.`;
-  return firstSentence;
+  const concise = /not called|never called|unused|not used|unreachable|not referenced/i.test(firstSentence)
+    ? firstSentence
+    : buildFallbackExplanation(item);
+
+  return /[.!?]$/.test(concise) ? concise : `${concise}.`;
 }
 
 module.exports = {

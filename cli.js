@@ -30,8 +30,10 @@ program
   .option('-f, --format <format>', 'Output format: json or console', 'console')
   .option('-e, --entryPoints <points...>', 'Entry point files')
   .option('-v, --verbose', 'Verbose output')
-  .option('--ai-explain', 'Generate explanation text for detected dead code')
-  .option('--ai-provider <provider>', 'AI provider: openai or hf', 'openai')
+  .option('--ai-explain', 'Enable automatic explanation text for detected dead code')
+  .option('--no-ai-explain', 'Disable automatic explanation text for detected dead code')
+  .option('--ai-explain-strict', 'Fail if real AI explanations cannot be generated')
+  .option('--ai-provider <provider>', 'AI provider: openai or hf', process.env.AI_PROVIDER || 'openai')
   .option('--ai-model <model>', 'Model for AI explanations (default based on provider)')
   .option('--ai-api-key <key>', 'API key for selected AI provider (overrides env)')
   .option('--ai-base-url <url>', 'Custom AI endpoint URL (overrides provider default)')
@@ -68,8 +70,10 @@ program
   .option('-f, --force', 'Skip confirmation prompts')
   .option('--allow-self-clean', 'Allow cleaning the tool root itself')
   .option('--confidence <score>', 'Minimum confidence score (0-100)', '85')
-  .option('--ai-explain', 'Generate explanation text for why each item is removed')
-  .option('--ai-provider <provider>', 'AI provider: openai or hf', 'openai')
+  .option('--ai-explain', 'Generate explanation text for removed items (optional)')
+  .option('--no-ai-explain', 'Disable automatic explanation text for removed items')
+  .option('--ai-explain-strict', 'Fail if real AI explanations cannot be generated')
+  .option('--ai-provider <provider>', 'AI provider: openai or hf', process.env.AI_PROVIDER || 'openai')
   .option('--ai-model <model>', 'Model for AI explanations (default: gpt-4o-mini)')
   .option('--ai-api-key <key>', 'API key for selected AI provider (overrides env)')
   .option('--ai-base-url <url>', 'Custom AI endpoint URL (overrides provider default)')
@@ -114,7 +118,7 @@ program
         entryPoints: report.entryPoints,
       });
 
-      if (options.aiExplain) {
+      if (shouldExplainOnClean(options)) {
         console.log(chalk.blue('Generating explanations for removals...'));
         const explainer = new AiExplainer({
           provider: options.aiProvider,
@@ -123,12 +127,17 @@ program
           baseUrl: options.aiBaseUrl,
         });
         safeCode = await explainer.explainItems(safeCode);
+        if (options.aiExplainStrict) {
+          enforceRequiredAiExplanations(explainer, options.aiProvider);
+        }
         logAiFallbackHintIfNeeded(explainer, options.aiProvider);
         logAiFailureHintIfNeeded(explainer);
 
-        const explanationPath = path.resolve(options.explainOutput || 'cleanup-explanations.json');
-        saveExplanations(explanationPath, resolvedProject, safeCode);
-        console.log(chalk.green(`Saved explanations to: ${explanationPath}`));
+        if (options.explainOutput) {
+          const explanationPath = path.resolve(options.explainOutput);
+          saveExplanations(explanationPath, resolvedProject, safeCode);
+          console.log(chalk.green(`Saved explanations to: ${explanationPath}`));
+        }
       }
 
       const proposal = cleaner.generateDeletionProposal(safeCode, {
@@ -166,8 +175,10 @@ program
   .description('Generate a detailed analysis report')
   .option('-o, --output <file>', 'Output report file (default: adc-report.json)')
   .option('-f, --format <format>', 'Output format: json or console', 'json')
-  .option('--ai-explain', 'Generate explanation text for detected dead code')
-  .option('--ai-provider <provider>', 'AI provider: openai or hf', 'openai')
+  .option('--ai-explain', 'Enable automatic explanation text for detected dead code')
+  .option('--no-ai-explain', 'Disable automatic explanation text for detected dead code')
+  .option('--ai-explain-strict', 'Fail if real AI explanations cannot be generated')
+  .option('--ai-provider <provider>', 'AI provider: openai or hf', process.env.AI_PROVIDER || 'openai')
   .option('--ai-model <model>', 'Model for AI explanations (default based on provider)')
   .option('--ai-api-key <key>', 'API key for selected AI provider (overrides env)')
   .option('--ai-base-url <url>', 'Custom AI endpoint URL (overrides provider default)')
@@ -209,7 +220,7 @@ function askConfirmation(question) {
 }
 
 async function maybeExplainDeadCode(report, options, defaultFileName) {
-  if (!options.aiExplain) return;
+  if (options.aiExplain === false) return;
   if (!report || !Array.isArray(report.deadCodeItems) || report.deadCodeItems.length === 0) return;
 
   console.log(chalk.blue('Generating explanations for detected dead code...'));
@@ -220,12 +231,17 @@ async function maybeExplainDeadCode(report, options, defaultFileName) {
     baseUrl: options.aiBaseUrl,
   });
   report.deadCodeItems = await explainer.explainItems(report.deadCodeItems);
+  if (options.aiExplainStrict) {
+    enforceRequiredAiExplanations(explainer, options.aiProvider);
+  }
   logAiFallbackHintIfNeeded(explainer, options.aiProvider);
   logAiFailureHintIfNeeded(explainer);
 
-  const explanationPath = path.resolve(options.explainOutput || defaultFileName);
-  saveExplanations(explanationPath, report.projectPath || process.cwd(), report.deadCodeItems);
-  console.log(chalk.green(`Saved explanations to: ${explanationPath}`));
+  if (options.explainOutput) {
+    const explanationPath = path.resolve(options.explainOutput || defaultFileName);
+    saveExplanations(explanationPath, report.projectPath || process.cwd(), report.deadCodeItems);
+    console.log(chalk.green(`Saved explanations to: ${explanationPath}`));
+  }
 }
 
 function logAiFallbackHintIfNeeded(explainer, providerInput) {
@@ -279,6 +295,42 @@ function formatKb(bytes) {
   const kb = bytes / 1024;
   if (kb >= 1) return `${Math.round(kb)} KB`;
   return `${kb.toFixed(2)} KB`;
+}
+
+function shouldExplainOnClean(options) {
+  if (!options || options.aiExplain === false) return false;
+  // For clean flow, explanations are opt-in (only when explicitly requested).
+  return hasCliFlag('--ai-explain');
+}
+
+function hasCliFlag(flag) {
+  return Array.isArray(process.argv) && process.argv.includes(flag);
+}
+
+function enforceRequiredAiExplanations(explainer, providerInput) {
+  const provider = String(providerInput || 'openai').toLowerCase();
+  const keyHint =
+    provider === 'hf' || provider === 'huggingface'
+      ? 'HF_API_KEY (or HUGGINGFACE_API_KEY)'
+      : 'OPENAI_API_KEY';
+
+  if (!explainer || typeof explainer.isEnabled !== 'function' || !explainer.isEnabled()) {
+    throw new Error(`${keyHint} not found. --ai-explain requires real AI explanations.`);
+  }
+
+  const fallbackCount =
+    typeof explainer.getFallbackCount === 'function' ? explainer.getFallbackCount() : 0;
+  const aiFailures =
+    typeof explainer.hasAiFailures === 'function' ? explainer.hasAiFailures() : false;
+
+  if (fallbackCount > 0 || aiFailures) {
+    const lastError =
+      typeof explainer.getLastAiError === 'function' ? explainer.getLastAiError() : '';
+    const suffix = lastError ? ` Last error: ${lastError}` : '';
+    throw new Error(
+      `--ai-explain requires AI output for every item, but ${fallbackCount} item(s) used fallback.${suffix}`
+    );
+  }
 }
 
 function loadDotEnvIfPresent() {
