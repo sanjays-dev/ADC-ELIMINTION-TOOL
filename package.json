@@ -18,9 +18,19 @@
     "clean:here": "node cli.js clean .",
     "clean:all:here": "node cli.js clean . --confidence 0 --force",
     "server": "node server.js",
-    "test": "echo \"Tests coming soon\"",
+    "compile": "npm --prefix extension run compile",
+    "test": "npm --prefix extension run test",
     "lint": "echo \"Linting skipped for JS version\"",
-    "format": "echo \"Formatting skipped for JS version\""
+    "format": "echo \"Formatting skipped for JS version\"",
+    "build:pkg": "npx pkg . --out-path dist/bin --targets node18-win-x64,node18-linux-x64,node18-macos-x64",
+    "extension:prepare-binaries": "node -e \"const fs=require('fs'),path=require('path');const src=path.join(__dirname,'dist','bin');const dest=path.join(__dirname,'extension','bin');if(!fs.existsSync(dest)) fs.mkdirSync(dest,{recursive:true});if(fs.existsSync(src)){for(const f of fs.readdirSync(src)){fs.copyFileSync(path.join(src,f),path.join(dest,f));}}console.log('binaries prepared');\"",
+    "extension:package": "cd extension && npx vsce package",
+    "extension:vsix": "npm --prefix extension run package:local",
+    "extension:install": "npm --prefix extension run install:local"
+  },
+  "devDependencies": {
+    "pkg": "^5.8.0",
+    "vsce": "^2.9.0"
   },
   "keywords": [
     "dead-code",
@@ -51,3 +61,4 @@
     "node": ">=14.0.0"
   }
 }
+

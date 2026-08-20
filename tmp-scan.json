@@ -1,0 +1,33 @@
+{
+  "projectPath": "D:\\Bit\\Task\\OWN PROJECT\\ADC Elimination tool\\tmp-feature-check\\js",
+  "scanDate": "2026-07-16T10:21:45.681Z",
+  "totalFiles": 1,
+  "languageStats": {
+    "javascript": 1
+  },
+  "totalNodes": 1,
+  "deadCodeItems": [],
+  "totalDeadCodeLines": 0,
+  "codeReductionPercentage": 0,
+  "confidenceScore": 100,
+  "summary": {
+    "totalDeadFunctions": 0,
+    "totalDeadVariables": 0,
+    "totalUnusedImports": 0,
+    "totalUnreachableFiles": 0
+  },
+  "entryPoints": [
+    "D:/Bit/Task/OWN PROJECT/ADC Elimination tool/tmp-feature-check/js/app.js"
+  ],
+  "analysis": {
+    "graph": {
+      "nodes": {},
+      "edges": {}
+    },
+    "reachableNodes": {},
+    "deadCodeItems": [],
+    "totalNodes": 1,
+    "reachableCount": 1,
+    "deadCount": 0
+  }
+}

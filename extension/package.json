@@ -1,0 +1,111 @@
+{
+  "name": "automated-dead-code-eliminator",
+  "displayName": "Automated Dead Code Eliminator",
+  "description": "Static dead code analysis with diagnostics and safe quick fixes for JavaScript and TypeScript projects",
+  "version": "1.0.0",
+  "publisher": "your-publisher-name",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/automated-dead-code-eliminator"
+  },
+  "icon": "images/icon-placeholder.png",
+  "scripts": {
+    "compile": "node ./scripts/build.js",
+    "watch": "node ./scripts/build.js --watch",
+    "pretest": "npm run compile",
+    "test:unit": "mocha --recursive \"test/**/*.test.ts\" -r ts-node/register",
+    "test:integration": "node ./test/integration/runTest.js",
+    "test": "npm run test:unit",
+    "test:all": "npm run test:unit && npm run test:integration",
+    "package": "npm run compile && vsce package",
+    "package:local": "npm run package",
+    "install:local": "node ./src/installLocal.js"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Linters",
+    "Other"
+  ],
+  "keywords": [
+    "dead-code",
+    "static-analysis",
+    "javascript",
+    "typescript",
+    "quick-fix",
+    "diagnostics"
+  ],
+  "activationEvents": [
+    "onCommand:deadCodeEliminator.analyzeCurrentFile",
+    "onCommand:deadCodeEliminator.analyzeWorkspace",
+    "onCommand:deadCodeEliminator.removeSafeDeadCode",
+    "onCommand:deadCodeEliminator.clearDiagnostics",
+    "onLanguage:javascript",
+    "onLanguage:typescript",
+    "onLanguage:javascriptreact",
+    "onLanguage:typescriptreact"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "deadCodeEliminator.analyzeCurrentFile",
+        "title": "Dead Code: Analyze Current File"
+      },
+      {
+        "command": "deadCodeEliminator.analyzeWorkspace",
+        "title": "Dead Code: Analyze Workspace"
+      },
+      {
+        "command": "deadCodeEliminator.removeSafeDeadCode",
+        "title": "Dead Code: Remove Safe Dead Code"
+      },
+      {
+        "command": "deadCodeEliminator.clearDiagnostics",
+        "title": "Dead Code: Clear Diagnostics"
+      }
+    ],
+    "configuration": {
+      "title": "Dead Code Eliminator",
+      "properties": {
+        "deadCodeEliminator.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable dead code analysis and diagnostics."
+        },
+        "deadCodeEliminator.analyzeOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Analyze supported files when they are saved."
+        },
+        "deadCodeEliminator.minConfidence": {
+          "type": "number",
+          "default": 85,
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Minimum confidence score required for dead code diagnostics."
+        },
+        "deadCodeEliminator.maxFileSizeKB": {
+          "type": "number",
+          "default": 1024,
+          "minimum": 1,
+          "description": "Skip analysis for files larger than this threshold in KB."
+        }
+      }
+    }
+  },
+  "devDependencies": {
+    "@babel/parser": "^7.26.2",
+    "@vscode/test-electron": "^2.4.1",
+    "@types/mocha": "^10.0.8",
+    "@types/node": "^20.16.5",
+    "@types/vscode": "^1.85.0",
+    "esbuild": "^0.23.1",
+    "mocha": "^10.7.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.2",
+    "vsce": "^2.15.0"
+  }
+}
